@@ -8,7 +8,7 @@ from utils import log
 
 
 def main():
-    screen = game_init()
+    game_init()
     screen = pygame.display.get_surface()
     # game main loop
     while True:

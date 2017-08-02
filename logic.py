@@ -4,8 +4,8 @@ import random
 from copy import deepcopy
 
 
-UNIT_WIDTH = 20
-UNIT_HEIGHT = 20
+UNIT_WIDTH = 30
+UNIT_HEIGHT = 30
 
 
 class Unit(object):
@@ -13,10 +13,12 @@ class Unit(object):
     def __init__(self, status):
         self.status = status
         self.clicked = False
+        self.flagged = False
 
     def __repr__(self):
         c = 'T' if self.clicked else 'F'
-        return str(self.status) + ' ' + c
+        f = '*' if self.flagged else '.'
+        return str(self.status) + ' ' + c + ' ' + f
 
     def set_status(self, status):
         self.status = status
@@ -24,8 +26,14 @@ class Unit(object):
     def click(self):
         self.clicked = True
 
+    def switch_flag(self):
+        self.flagged = not self.flagged
+
     def get_status(self):
         return self.status
+
+    def get_flagged(self):
+        return self.flagged
 
     def is_bomb(self):
         return self.status == 9
@@ -55,6 +63,11 @@ class Table(object):
     def set_unit(self, x, y, status):
         self.table_square[x][y].set_status(status)
 
+    def switch_flag(self, x, y):
+        if self.table_square[x][y].get_status():
+            return
+        self.table_square[x][y].switch_flag()
+
     def drop_bomb(self, bomb_num):
         while bomb_num > 0:
             j = random.randint(0, self.width - 1)
@@ -64,6 +77,12 @@ class Table(object):
             else:
                 self.set_unit(i, j, 9)
                 bomb_num -= 1
+
+    def game_lost(self):
+        for row in self.table_square:
+            for unit in row:
+                if unit.is_bomb():
+                    unit.click()
 
     def cal_square(self):
         aux_table = deepcopy(self.table_square)
@@ -108,6 +127,9 @@ class Table(object):
             return
         unit = self.table_square[y][x]
 
+        if unit.flagged:
+            return
+
         if not pressed and unit.is_bomb():
             return
 
@@ -117,13 +139,17 @@ class Table(object):
 
         if pressed and unit.is_bomb():
             print 'you lost'
+            self.game_lost()
             return
 
-        # recurse
-        self.click(x - 1, y, False)
-        self.click(x + 1, y, False)
-        self.click(x, y - 1, False)
-        self.click(x, y + 1, False)
+        if unit.get_status() != 0:
+            return
+        else:
+            # recurse
+            self.click(x - 1, y, False)
+            self.click(x + 1, y, False)
+            self.click(x, y - 1, False)
+            self.click(x, y + 1, False)
 
 
 
