@@ -28,7 +28,8 @@ def main():
                 left, mid, right = pygame.mouse.get_pressed()
                 x //= 30
                 y //= 30
-                print x, y, left, right
+                if mid:
+                    continue
                 if left:
                     table.click(x, y)
                 if right:
