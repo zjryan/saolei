@@ -2,10 +2,9 @@
 import pygame
 import random
 from copy import deepcopy
-
-
-UNIT_WIDTH = 30
-UNIT_HEIGHT = 30
+from init import (UNIT_WIDTH,
+                  UNIT_HEIGHT,
+                  unit_assets_map)
 
 
 class Unit(object):
@@ -40,10 +39,17 @@ class Unit(object):
 
     @staticmethod
     def blit(unit, screen, x, y):
-        if unit.clicked:
-            pass
+        draw_pos = (y * UNIT_WIDTH, x * UNIT_HEIGHT)
+
+        if unit.get_flagged():
+            asset = unit_assets_map['flag']
+        elif not unit.clicked:
+            asset = unit_assets_map['unclick']
+        elif unit.is_bomb():
+            asset = unit_assets_map['bomb']
         else:
-            pass
+            asset = unit_assets_map[unit.status]
+        screen.blit(asset, draw_pos)
 
 
 class Table(object):
@@ -56,6 +62,8 @@ class Table(object):
         self.table_square = [[Unit(0) for x in range(self.width)] for y in range(self.height)]
         self.drop_bomb(bomb_num)
         self.cal_square()
+        self.is_game_lost = False
+        self.is_game_win = False
 
     def __repr__(self):
         return '\n'.join([str(l) for l in self.table_square])
@@ -64,9 +72,9 @@ class Table(object):
         self.table_square[x][y].set_status(status)
 
     def switch_flag(self, x, y):
-        if self.table_square[x][y].get_status():
+        if self.table_square[y][x].clicked:
             return
-        self.table_square[x][y].switch_flag()
+        self.table_square[y][x].switch_flag()
 
     def drop_bomb(self, bomb_num):
         while bomb_num > 0:
@@ -79,10 +87,22 @@ class Table(object):
                 bomb_num -= 1
 
     def game_lost(self):
+        self.is_game_lost = True
         for row in self.table_square:
             for unit in row:
                 if unit.is_bomb():
                     unit.click()
+
+    def game_win(self):
+        if self.is_game_win:
+            return self.is_game_win
+
+        for row in self.table_square:
+            for unit in row:
+                if unit.is_bomb() and not unit.flagged:
+                    return False
+        self.is_game_win = True
+        return True
 
     def cal_square(self):
         aux_table = deepcopy(self.table_square)
@@ -127,6 +147,10 @@ class Table(object):
             return
         unit = self.table_square[y][x]
 
+        if pressed and unit.flagged:
+            unit.switch_flag()
+            return
+
         if unit.flagged:
             return
 
@@ -138,7 +162,6 @@ class Table(object):
         unit.click()
 
         if pressed and unit.is_bomb():
-            print 'you lost'
             self.game_lost()
             return
 
@@ -151,7 +174,8 @@ class Table(object):
             self.click(x, y - 1, False)
             self.click(x, y + 1, False)
 
-
-
-
-
+    def blit(self, screen):
+        for i in range(self.height):
+            for j in range(self.width):
+                unit = self.table_square[i][j]
+                Unit.blit(unit, screen, i, j)
