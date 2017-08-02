@@ -13,6 +13,7 @@ class Unit(object):
         self.status = status
         self.clicked = False
         self.flagged = False
+        self.error = False
 
     def __repr__(self):
         c = 'T' if self.clicked else 'F'
@@ -28,11 +29,17 @@ class Unit(object):
     def switch_flag(self):
         self.flagged = not self.flagged
 
+    def set_error(self):
+        self.error = True
+
     def get_status(self):
         return self.status
 
-    def get_flagged(self):
+    def is_flagged(self):
         return self.flagged
+
+    def is_error(self):
+        return self.error
 
     def is_bomb(self):
         return self.status == 9
@@ -41,7 +48,9 @@ class Unit(object):
     def blit(unit, screen, x, y):
         draw_pos = (y * UNIT_WIDTH, x * UNIT_HEIGHT)
 
-        if unit.get_flagged():
+        if unit.is_error():
+            asset = unit_assets_map['error']
+        elif unit.is_flagged():
             asset = unit_assets_map['flag']
         elif not unit.clicked:
             asset = unit_assets_map['unclick']
@@ -59,11 +68,13 @@ class Table(object):
                isinstance(table_size, list) and \
                len(table_size) == 2
         self.width, self.height = table_size
+        assert self.width * self.height >= bomb_num
         self.table_square = [[Unit(0) for x in range(self.width)] for y in range(self.height)]
         self.drop_bomb(bomb_num)
         self.cal_square()
         self.is_game_lost = False
         self.is_game_win = False
+        self.flag_num = bomb_num
 
     def __repr__(self):
         return '\n'.join([str(l) for l in self.table_square])
@@ -72,9 +83,17 @@ class Table(object):
         self.table_square[x][y].set_status(status)
 
     def switch_flag(self, x, y):
-        if self.table_square[y][x].clicked:
+        unit = self.table_square[y][x]
+        if unit.clicked:
             return
-        self.table_square[y][x].switch_flag()
+
+        if unit.is_flagged():
+            self.flag_num += 1
+            unit.switch_flag()
+        else:
+            if self.flag_num > 0:
+                self.flag_num -= 1
+                unit.switch_flag()
 
     def drop_bomb(self, bomb_num):
         while bomb_num > 0:
@@ -92,6 +111,8 @@ class Table(object):
             for unit in row:
                 if unit.is_bomb():
                     unit.click()
+                if unit.is_flagged() and not unit.is_bomb():
+                    unit.set_error()
 
     def game_win(self):
         if self.is_game_win:
@@ -140,7 +161,6 @@ class Table(object):
 
         for i in range(1, self.height + 1):
             self.table_square[i - 1] = aux_table[i][1: -1]
-            print self.table_square[i - 1]
 
     def click(self, x, y, pressed=True):
         if not 0 <= x < self.width or not 0 <= y < self.height:
@@ -148,7 +168,7 @@ class Table(object):
         unit = self.table_square[y][x]
 
         if pressed and unit.flagged:
-            unit.switch_flag()
+            self.switch_flag(x, y)
             return
 
         if unit.flagged:

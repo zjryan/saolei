@@ -12,7 +12,7 @@ UNIT_HEIGHT = 30
 UNIT_WIDTH_NUM = 20
 UNIT_HEIGHT_NUM = 20
 TABLE_SIZE = (UNIT_WIDTH_NUM, UNIT_HEIGHT_NUM)
-BOMB_NUM = 30
+BOMB_NUM = 100
 
 SCREEN_WIDTH = UNIT_WIDTH * UNIT_WIDTH_NUM
 SCREEN_HEIGHT = UNIT_HEIGHT * UNIT_HEIGHT_NUM
@@ -39,6 +39,8 @@ def game_init():
     unit_assets_map['unclick'] = pygame.image.load(unclick_img_path).convert()
     flag_img_path = os.path.join(ASSETS_DIR, 'flag.jpg')
     unit_assets_map['flag'] = pygame.image.load(flag_img_path).convert()
+    error_img_path = os.path.join(ASSETS_DIR, 'error.jpg')
+    unit_assets_map['error'] = pygame.image.load(error_img_path).convert()
 
 
 def game_exit():
